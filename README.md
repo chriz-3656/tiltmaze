@@ -11,7 +11,7 @@ TiltMaze is a mobile-first 2D tilt maze game built with HTML5 Canvas and vanilla
 - Guaranteed connected mazes (no isolated regions)
 - Game menus: main, pause, help, level select
 - Level locks + unlock progression
-- Username login for global profile/progress
+- Username login for global profile/progress (session persists; no relogin until logout)
 - Global leaderboard (per level)
 - Creator details page
 - Installable PWA with offline caching
@@ -79,9 +79,11 @@ wrangler d1 execute tiltmaze --file=schema.sql
 wrangler deploy
 ```
 
-6. Copy Worker URL (current deployed URL: `https://tiltmaze-api.chrizmonsaji.workers.dev`).
+6. Worker URL is hardcoded in frontend (`game.js`) as:
+`https://tiltmaze-api.chrizmonsaji.workers.dev`
 
-7. In game start screen, paste that URL in the `API URL` input (prefilled by default), then login.
+7. In game start screen, enter username and login.
+8. Use Logout to switch account.
 
 ## API endpoints
 
@@ -99,6 +101,7 @@ wrangler deploy
 - Do not hardcode login tokens in source files.
 - Tokens are stored client-side in browser local storage after successful login.
 - `backend/wrangler.toml` should include real D1 `database_id` and never include private secrets.
+- API URL is hardcoded in code and hidden from UI to reduce client-side tampering.
 
 ## Deploy frontend to GitHub Pages
 

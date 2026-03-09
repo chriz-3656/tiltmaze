@@ -13,8 +13,8 @@ const completeTitle = document.getElementById("complete-title");
 const scoreSubmitStatus = document.getElementById("score-submit-status");
 const startBtn = document.getElementById("start-btn");
 const loginBtn = document.getElementById("login-btn");
+const logoutBtn = document.getElementById("logout-btn");
 const usernameInput = document.getElementById("username-input");
-const apiUrlInput = document.getElementById("api-url-input");
 const authStatus = document.getElementById("auth-status");
 
 const openLevelSelectBtn = document.getElementById("open-level-select-btn");
@@ -47,8 +47,10 @@ const creatorDetails = document.getElementById("creator-details");
 const fallbackControls = document.getElementById("fallback-controls");
 const controlButtons = Array.from(document.querySelectorAll(".control-btn"));
 
+const API_BASE = "https://tiltmaze-api.chrizmonsaji.workers.dev";
+
 const onlineState = {
-  apiBase: localStorage.getItem("tiltmaze_api_base") || "https://tiltmaze-api.chrizmonsaji.workers.dev",
+  apiBase: API_BASE,
   token: localStorage.getItem("tiltmaze_token") || "",
   username: localStorage.getItem("tiltmaze_username") || "",
   userId: Number(localStorage.getItem("tiltmaze_user_id") || 0),
@@ -160,7 +162,6 @@ const wallAudio = new Audio("assets/sounds/wall.wav");
 const goalAudio = new Audio("assets/sounds/goal.wav");
 
 function initGame() {
-  apiUrlInput.value = onlineState.apiBase;
   usernameInput.value = onlineState.username;
   resizeCanvas();
   bindUI();
@@ -182,6 +183,7 @@ function bindUI() {
   loginBtn.addEventListener("click", async () => {
     await login();
   });
+  logoutBtn.addEventListener("click", () => logout());
 
   startBtn.addEventListener("click", async () => {
     if (!motionEnabled && hasSensorSupport) await requestMotionPermission();
@@ -297,14 +299,20 @@ function hideAllOverlays() {
 }
 
 function syncAuthUI() {
-  userLabel.textContent = onlineState.username || "Guest";
-  authStatus.textContent = onlineState.token
+  const loggedIn = Boolean(onlineState.token);
+  userLabel.textContent = loggedIn ? onlineState.username : "Guest";
+  authStatus.textContent = loggedIn
     ? `Logged in as ${onlineState.username}`
     : "Not logged in (global leaderboard disabled)";
+
+  usernameInput.value = onlineState.username || "";
+  usernameInput.readOnly = loggedIn;
+  usernameInput.classList.toggle("hidden", loggedIn);
+  loginBtn.classList.toggle("hidden", loggedIn);
+  logoutBtn.classList.toggle("hidden", !loggedIn);
 }
 
 function saveOnlineState() {
-  localStorage.setItem("tiltmaze_api_base", onlineState.apiBase);
   localStorage.setItem("tiltmaze_unlocked_level", String(onlineState.unlockedLevel));
   if (onlineState.token) {
     localStorage.setItem("tiltmaze_token", onlineState.token);
@@ -313,13 +321,9 @@ function saveOnlineState() {
   }
 }
 
-function normalizeApiBase(raw) {
-  return (raw || "").trim().replace(/\/$/, "");
-}
-
 function apiUrl(path) {
-  const base = normalizeApiBase(onlineState.apiBase);
-  if (!base) throw new Error("Set API URL first");
+  const base = onlineState.apiBase.replace(/\/$/, "");
+  if (!base) throw new Error("API is not configured");
   if (base.endsWith("/api")) return `${base}${path}`;
   return `${base}/api${path}`;
 }
@@ -342,7 +346,6 @@ async function apiRequest(path, options = {}) {
 
 async function login() {
   try {
-    onlineState.apiBase = normalizeApiBase(apiUrlInput.value);
     const username = usernameInput.value.trim();
     if (!username) throw new Error("Enter username");
 
@@ -364,6 +367,21 @@ async function login() {
   }
 }
 
+function logout() {
+  onlineState.token = "";
+  onlineState.username = "";
+  onlineState.userId = 0;
+  onlineState.unlockedLevel = 1;
+
+  localStorage.removeItem("tiltmaze_token");
+  localStorage.removeItem("tiltmaze_username");
+  localStorage.removeItem("tiltmaze_user_id");
+  localStorage.setItem("tiltmaze_unlocked_level", "1");
+
+  buildLevelSelect();
+  syncAuthUI();
+}
+
 async function tryResumeSession() {
   if (!onlineState.token || !onlineState.apiBase) return;
   try {
@@ -377,9 +395,7 @@ async function tryResumeSession() {
     syncAuthUI();
     buildLevelSelect();
   } catch {
-    onlineState.token = "";
-    localStorage.removeItem("tiltmaze_token");
-    syncAuthUI();
+    logout();
   }
 }
 
