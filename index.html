@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#111111" />
+  <title>TiltMaze</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="assets/icons/icon-192.png" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="app">
+    <section id="start-screen" class="overlay visible" aria-live="polite">
+      <div class="panel">
+        <h1>TiltMaze</h1>
+        <p>Tilt your phone to move the ball through the maze.</p>
+        <button id="start-btn" class="primary-btn">Start Game</button>
+        <button id="enable-motion-btn" class="secondary-btn">Enable Motion Controls</button>
+      </div>
+    </section>
+
+    <section id="complete-screen" class="overlay" aria-live="assertive">
+      <div class="panel">
+        <h2 id="complete-title">Level Complete!</h2>
+        <button id="next-level-btn" class="primary-btn">Next Level</button>
+      </div>
+    </section>
+
+    <header class="top-bar">
+      <div>Level: <span id="level-label">1</span></div>
+      <div>Time: <span id="timer-label">0.0s</span></div>
+      <button id="restart-btn" class="small-btn">Restart</button>
+    </header>
+
+    <section class="game-area">
+      <canvas id="game-canvas" width="360" height="640"></canvas>
+      <div id="fallback-controls" class="controls hidden">
+        <button class="control-btn" data-dir="up">▲</button>
+        <div class="middle-row">
+          <button class="control-btn" data-dir="left">◀</button>
+          <button class="control-btn" data-dir="down">▼</button>
+          <button class="control-btn" data-dir="right">▶</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="game.js"></script>
+</body>
+</html>
