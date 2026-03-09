@@ -6,13 +6,27 @@ const completeScreen = document.getElementById("complete-screen");
 const pauseScreen = document.getElementById("pause-screen");
 const levelSelectScreen = document.getElementById("level-select-screen");
 const helpScreen = document.getElementById("help-screen");
+const leaderboardScreen = document.getElementById("leaderboard-screen");
+const creatorScreen = document.getElementById("creator-screen");
 
 const completeTitle = document.getElementById("complete-title");
+const scoreSubmitStatus = document.getElementById("score-submit-status");
 const startBtn = document.getElementById("start-btn");
+const loginBtn = document.getElementById("login-btn");
+const usernameInput = document.getElementById("username-input");
+const apiUrlInput = document.getElementById("api-url-input");
+const authStatus = document.getElementById("auth-status");
+
 const openLevelSelectBtn = document.getElementById("open-level-select-btn");
 const closeLevelSelectBtn = document.getElementById("close-level-select-btn");
 const openHelpBtn = document.getElementById("open-help-btn");
 const closeHelpBtn = document.getElementById("close-help-btn");
+const openLeaderboardBtn = document.getElementById("open-leaderboard-btn");
+const closeLeaderboardBtn = document.getElementById("close-leaderboard-btn");
+const refreshLeaderboardBtn = document.getElementById("refresh-leaderboard-btn");
+const openCreatorBtn = document.getElementById("open-creator-btn");
+const closeCreatorBtn = document.getElementById("close-creator-btn");
+
 const nextLevelBtn = document.getElementById("next-level-btn");
 const completeMenuBtn = document.getElementById("complete-menu-btn");
 const restartBtn = document.getElementById("restart-btn");
@@ -23,11 +37,23 @@ const pauseRestartBtn = document.getElementById("pause-restart-btn");
 const pauseMenuBtn = document.getElementById("pause-menu-btn");
 const enableMotionBtn = document.getElementById("enable-motion-btn");
 
+const userLabel = document.getElementById("user-label");
 const levelLabel = document.getElementById("level-label");
 const timerLabel = document.getElementById("timer-label");
 const levelGrid = document.getElementById("level-grid");
+const leaderboardBody = document.getElementById("leaderboard-body");
+const leaderboardLevelInput = document.getElementById("leaderboard-level-input");
+const creatorDetails = document.getElementById("creator-details");
 const fallbackControls = document.getElementById("fallback-controls");
 const controlButtons = Array.from(document.querySelectorAll(".control-btn"));
+
+const onlineState = {
+  apiBase: localStorage.getItem("tiltmaze_api_base") || "",
+  token: localStorage.getItem("tiltmaze_token") || "",
+  username: localStorage.getItem("tiltmaze_username") || "",
+  userId: Number(localStorage.getItem("tiltmaze_user_id") || 0),
+  unlockedLevel: Number(localStorage.getItem("tiltmaze_unlocked_level") || 1)
+};
 
 const fixedLevels = [
   [
@@ -134,22 +160,29 @@ const wallAudio = new Audio("assets/sounds/wall.wav");
 const goalAudio = new Audio("assets/sounds/goal.wav");
 
 function initGame() {
+  apiUrlInput.value = onlineState.apiBase;
+  usernameInput.value = onlineState.username;
   resizeCanvas();
   bindUI();
   initSensors();
-  buildLevelSelect();
   loadLevel(0);
+  syncAuthUI();
+  buildLevelSelect();
+  tryResumeSession();
+
   running = true;
   requestAnimationFrame(loop);
 
   if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("service-worker.js").catch(() => {
-      // Ignore SW registration errors in unsupported contexts.
-    });
+    navigator.serviceWorker.register("service-worker.js").catch(() => {});
   }
 }
 
 function bindUI() {
+  loginBtn.addEventListener("click", async () => {
+    await login();
+  });
+
   startBtn.addEventListener("click", async () => {
     if (!motionEnabled && hasSensorSupport) await requestMotionPermission();
     gameStarted = true;
@@ -160,21 +193,24 @@ function bindUI() {
     await requestMotionPermission();
   });
 
-  openLevelSelectBtn.addEventListener("click", () => {
-    showOverlay(levelSelectScreen);
-  });
+  openLevelSelectBtn.addEventListener("click", () => showOverlay(levelSelectScreen));
+  closeLevelSelectBtn.addEventListener("click", () => showOverlay(startScreen));
 
-  closeLevelSelectBtn.addEventListener("click", () => {
-    showOverlay(startScreen);
-  });
+  openHelpBtn.addEventListener("click", () => showOverlay(helpScreen));
+  closeHelpBtn.addEventListener("click", () => showOverlay(startScreen));
 
-  openHelpBtn.addEventListener("click", () => {
-    showOverlay(helpScreen);
+  openLeaderboardBtn.addEventListener("click", async () => {
+    showOverlay(leaderboardScreen);
+    await refreshLeaderboard();
   });
+  closeLeaderboardBtn.addEventListener("click", () => showOverlay(startScreen));
+  refreshLeaderboardBtn.addEventListener("click", async () => refreshLeaderboard());
 
-  closeHelpBtn.addEventListener("click", () => {
-    showOverlay(startScreen);
+  openCreatorBtn.addEventListener("click", async () => {
+    showOverlay(creatorScreen);
+    await loadCreatorDetails();
   });
+  closeCreatorBtn.addEventListener("click", () => showOverlay(startScreen));
 
   nextLevelBtn.addEventListener("click", () => {
     hideAllOverlays();
@@ -182,9 +218,7 @@ function bindUI() {
     isPaused = false;
   });
 
-  completeMenuBtn.addEventListener("click", () => {
-    goToMenu();
-  });
+  completeMenuBtn.addEventListener("click", () => goToMenu());
 
   restartBtn.addEventListener("click", () => {
     loadLevel(levelIndex);
@@ -198,9 +232,7 @@ function bindUI() {
     showOverlay(pauseScreen);
   });
 
-  menuBtn.addEventListener("click", () => {
-    goToMenu();
-  });
+  menuBtn.addEventListener("click", () => goToMenu());
 
   resumeBtn.addEventListener("click", () => {
     if (!isPaused) return;
@@ -215,9 +247,7 @@ function bindUI() {
     hideOverlay(pauseScreen);
   });
 
-  pauseMenuBtn.addEventListener("click", () => {
-    goToMenu();
-  });
+  pauseMenuBtn.addEventListener("click", () => goToMenu());
 
   controlButtons.forEach((btn) => {
     btn.addEventListener("pointerdown", (e) => {
@@ -255,25 +285,158 @@ function hideOverlay(overlay) {
 }
 
 function hideAllOverlays() {
-  [startScreen, completeScreen, pauseScreen, levelSelectScreen, helpScreen].forEach((overlay) => {
-    overlay.classList.remove("visible");
+  [
+    startScreen,
+    completeScreen,
+    pauseScreen,
+    levelSelectScreen,
+    helpScreen,
+    leaderboardScreen,
+    creatorScreen
+  ].forEach((overlay) => overlay.classList.remove("visible"));
+}
+
+function syncAuthUI() {
+  userLabel.textContent = onlineState.username || "Guest";
+  authStatus.textContent = onlineState.token
+    ? `Logged in as ${onlineState.username}`
+    : "Not logged in (global leaderboard disabled)";
+}
+
+function saveOnlineState() {
+  localStorage.setItem("tiltmaze_api_base", onlineState.apiBase);
+  localStorage.setItem("tiltmaze_unlocked_level", String(onlineState.unlockedLevel));
+  if (onlineState.token) {
+    localStorage.setItem("tiltmaze_token", onlineState.token);
+    localStorage.setItem("tiltmaze_username", onlineState.username);
+    localStorage.setItem("tiltmaze_user_id", String(onlineState.userId));
+  }
+}
+
+function normalizeApiBase(raw) {
+  return (raw || "").trim().replace(/\/$/, "");
+}
+
+function apiUrl(path) {
+  const base = normalizeApiBase(onlineState.apiBase);
+  if (!base) throw new Error("Set API URL first");
+  if (base.endsWith("/api")) return `${base}${path}`;
+  return `${base}/api${path}`;
+}
+
+async function apiRequest(path, options = {}) {
+  const headers = { "Content-Type": "application/json", ...(options.headers || {}) };
+  if (onlineState.token) headers.Authorization = `Bearer ${onlineState.token}`;
+
+  const res = await fetch(apiUrl(path), {
+    ...options,
+    headers
   });
+
+  const payload = await res.json().catch(() => ({}));
+  if (!res.ok || payload.ok === false) {
+    throw new Error(payload.error || `Request failed (${res.status})`);
+  }
+  return payload;
+}
+
+async function login() {
+  try {
+    onlineState.apiBase = normalizeApiBase(apiUrlInput.value);
+    const username = usernameInput.value.trim();
+    if (!username) throw new Error("Enter username");
+
+    const result = await apiRequest("/login", {
+      method: "POST",
+      body: JSON.stringify({ username })
+    });
+
+    onlineState.token = result.token;
+    onlineState.username = result.user.username;
+    onlineState.userId = result.user.id;
+    onlineState.unlockedLevel = Math.max(1, result.progress.maxUnlockedLevel || 1);
+    saveOnlineState();
+    syncAuthUI();
+    buildLevelSelect();
+    authStatus.textContent = `Logged in as ${onlineState.username}`;
+  } catch (error) {
+    authStatus.textContent = error.message;
+  }
+}
+
+async function tryResumeSession() {
+  if (!onlineState.token || !onlineState.apiBase) return;
+  try {
+    const me = await apiRequest("/me", { method: "GET" });
+    onlineState.username = me.user.username;
+    onlineState.userId = me.user.id;
+
+    const progress = await apiRequest("/progress", { method: "GET" });
+    onlineState.unlockedLevel = Math.max(onlineState.unlockedLevel, progress.progress.maxUnlockedLevel || 1);
+    saveOnlineState();
+    syncAuthUI();
+    buildLevelSelect();
+  } catch {
+    onlineState.token = "";
+    localStorage.removeItem("tiltmaze_token");
+    syncAuthUI();
+  }
 }
 
 function buildLevelSelect() {
   levelGrid.innerHTML = "";
-  for (let i = 0; i < 15; i += 1) {
-    const btn = document.createElement("button");
-    btn.className = "level-btn";
-    btn.textContent = i < fixedLevels.length ? `L${i + 1}` : `R${i + 1}`;
-    btn.addEventListener("click", () => {
+  const maxLevelTile = Math.max(15, onlineState.unlockedLevel + 6);
+
+  for (let i = 0; i < maxLevelTile; i += 1) {
+    const button = document.createElement("button");
+    button.className = "level-btn";
+    button.textContent = i < fixedLevels.length ? `L${i + 1}` : `R${i + 1}`;
+
+    const locked = i + 1 > onlineState.unlockedLevel;
+    if (locked) {
+      button.classList.add("locked");
+      button.textContent += " 🔒";
+    }
+
+    button.addEventListener("click", () => {
+      if (locked) return;
       levelIndex = i;
       loadLevel(levelIndex);
       gameStarted = true;
       isPaused = false;
       hideAllOverlays();
     });
-    levelGrid.appendChild(btn);
+
+    levelGrid.appendChild(button);
+  }
+}
+
+async function refreshLeaderboard() {
+  leaderboardBody.innerHTML = "<tr><td colspan='3'>Loading...</td></tr>";
+  try {
+    const level = Math.max(1, Number(leaderboardLevelInput.value || 1));
+    const data = await apiRequest(`/leaderboard?level=${level}&limit=20`, { method: "GET" });
+
+    if (!data.entries.length) {
+      leaderboardBody.innerHTML = "<tr><td colspan='3'>No entries yet.</td></tr>";
+      return;
+    }
+
+    leaderboardBody.innerHTML = data.entries
+      .map((entry, index) => `<tr><td>${index + 1}</td><td>${entry.username}</td><td>${formatMs(entry.timeMs)}</td></tr>`)
+      .join("");
+  } catch (error) {
+    leaderboardBody.innerHTML = `<tr><td colspan='3'>${error.message}</td></tr>`;
+  }
+}
+
+async function loadCreatorDetails() {
+  creatorDetails.textContent = "Loading...";
+  try {
+    const data = await apiRequest("/creator", { method: "GET" });
+    creatorDetails.textContent = `${data.creator.name} - ${data.creator.bio} (${data.creator.website})`;
+  } catch {
+    creatorDetails.textContent = "TiltMaze by chriz-3656. Mobile tilt maze PWA built with JavaScript + Cloudflare.";
   }
 }
 
@@ -470,7 +633,6 @@ function ensureLevelConnected(level) {
     const targetKey = `${targetRow},${targetCol}`;
     if (reachable.has(targetKey)) continue;
 
-    // Carve a direct corridor to the nearest reachable cell.
     let nearest = null;
     let nearestDist = Infinity;
     for (const key of reachable) {
@@ -610,8 +772,43 @@ function checkGoal() {
   }
 }
 
-function onLevelComplete() {
+async function onLevelComplete() {
   playSound(goalAudio, 680, 0.12, "triangle");
+  const elapsedMs = Math.round(performance.now() - levelStart);
+  const completedLevel = levelIndex + 1;
+  const nextUnlocked = completedLevel + 1;
+
+  onlineState.unlockedLevel = Math.max(onlineState.unlockedLevel, nextUnlocked);
+  saveOnlineState();
+  buildLevelSelect();
+
+  if (onlineState.token && onlineState.apiBase) {
+    scoreSubmitStatus.textContent = "Submitting score...";
+    try {
+      await apiRequest("/leaderboard/submit", {
+        method: "POST",
+        body: JSON.stringify({ level: completedLevel, timeMs: elapsedMs })
+      });
+
+      const progress = await apiRequest("/progress/unlock", {
+        method: "POST",
+        body: JSON.stringify({ maxUnlockedLevel: nextUnlocked })
+      });
+
+      onlineState.unlockedLevel = Math.max(
+        onlineState.unlockedLevel,
+        progress.progress.maxUnlockedLevel || onlineState.unlockedLevel
+      );
+      saveOnlineState();
+      buildLevelSelect();
+      scoreSubmitStatus.textContent = `Saved globally. Best time: ${formatMs(elapsedMs)}`;
+    } catch (error) {
+      scoreSubmitStatus.textContent = `Local only: ${error.message}`;
+    }
+  } else {
+    scoreSubmitStatus.textContent = "Local progress saved. Login to submit global score.";
+  }
+
   const nextIndex = levelIndex + 1;
   completeTitle.textContent = nextIndex === fixedLevels.length
     ? "Level Complete! Random mazes unlocked."
@@ -696,6 +893,11 @@ function playSound(audio, fallbackFreq, fallbackSeconds, fallbackType) {
   }
   audio.currentTime = 0;
   audio.play().catch(() => playTone(fallbackFreq, fallbackSeconds, fallbackType));
+}
+
+function formatMs(ms) {
+  const totalSeconds = ms / 1000;
+  return `${totalSeconds.toFixed(2)}s`;
 }
 
 function canRunGameplay() {

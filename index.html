@@ -15,8 +15,16 @@
       <div class="panel">
         <h1>TiltMaze</h1>
         <p>Tilt your phone to move the ball through the maze.</p>
+
+        <input id="username-input" class="text-input" placeholder="Username (3-20 letters/numbers/_)" maxlength="20" />
+        <input id="api-url-input" class="text-input" placeholder="API URL (https://your-worker.workers.dev)" />
+        <button id="login-btn" class="primary-btn">Login / Register</button>
+        <p id="auth-status" class="status-text">Not logged in</p>
+
         <button id="start-btn" class="primary-btn">Start Game</button>
         <button id="open-level-select-btn" class="secondary-btn">Level Select</button>
+        <button id="open-leaderboard-btn" class="secondary-btn">Leaderboard</button>
+        <button id="open-creator-btn" class="secondary-btn">Creator Details</button>
         <button id="open-help-btn" class="secondary-btn">How To Play</button>
         <button id="enable-motion-btn" class="secondary-btn">Enable Motion Controls</button>
       </div>
@@ -25,6 +33,7 @@
     <section id="complete-screen" class="overlay" aria-live="assertive">
       <div class="panel">
         <h2 id="complete-title">Level Complete!</h2>
+        <p id="score-submit-status" class="status-text"></p>
         <button id="next-level-btn" class="primary-btn">Next Level</button>
         <button id="complete-menu-btn" class="secondary-btn">Main Menu</button>
       </div>
@@ -42,9 +51,37 @@
     <section id="level-select-screen" class="overlay" aria-live="polite">
       <div class="panel">
         <h2>Select Level</h2>
-        <p>First 6 are handcrafted. Higher levels are random mazes.</p>
+        <p>Clear levels to unlock higher levels and random mazes.</p>
         <div id="level-grid" class="level-grid"></div>
         <button id="close-level-select-btn" class="secondary-btn">Back</button>
+      </div>
+    </section>
+
+    <section id="leaderboard-screen" class="overlay" aria-live="polite">
+      <div class="panel">
+        <h2>Global Leaderboard</h2>
+        <div class="leaderboard-controls">
+          <label for="leaderboard-level-input">Level</label>
+          <input id="leaderboard-level-input" class="text-input compact" type="number" min="1" value="1" />
+          <button id="refresh-leaderboard-btn" class="mini-btn">Refresh</button>
+        </div>
+        <div class="leaderboard-table-wrap">
+          <table class="leaderboard-table">
+            <thead>
+              <tr><th>#</th><th>User</th><th>Best Time</th></tr>
+            </thead>
+            <tbody id="leaderboard-body"></tbody>
+          </table>
+        </div>
+        <button id="close-leaderboard-btn" class="secondary-btn">Back</button>
+      </div>
+    </section>
+
+    <section id="creator-screen" class="overlay" aria-live="polite">
+      <div class="panel">
+        <h2>Creator Details</h2>
+        <p id="creator-details">Loading...</p>
+        <button id="close-creator-btn" class="secondary-btn">Back</button>
       </div>
     </section>
 
@@ -61,6 +98,7 @@
     <header class="top-bar">
       <div>Level: <span id="level-label">1</span></div>
       <div>Time: <span id="timer-label">0.0s</span></div>
+      <div>User: <span id="user-label">Guest</span></div>
       <div class="actions">
         <button id="menu-btn" class="mini-btn">Menu</button>
         <button id="pause-btn" class="mini-btn">Pause</button>

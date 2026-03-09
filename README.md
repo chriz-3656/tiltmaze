@@ -1,24 +1,23 @@
-# TiltMaze (PWA)
+# TiltMaze (PWA + Global Leaderboard)
 
 TiltMaze is a mobile-first 2D tilt maze game built with HTML5 Canvas and vanilla JavaScript.
 
-## Features
+## What is now included
 
-- Motion controls with `DeviceOrientationEvent` (`gamma` and `beta`)
-- On-screen directional fallback controls when sensors are unavailable
-- Real-time ball physics (acceleration, velocity, friction)
-- Wall collision handling with bounce effect and collision sound
-- Goal detection and level progression
-- 6 handcrafted levels
-- Endless procedurally generated levels after handcrafted levels
-- Full game menu system:
-  - Main menu
-  - Level select menu
-  - Pause menu (resume/restart/menu)
-  - How-to-play screen
+- Motion controls (`DeviceOrientationEvent` gamma/beta)
+- Fallback on-screen controls
+- Real-time physics with friction and wall collision
+- 6 handcrafted levels + endless random generated levels
+- Guaranteed connected mazes (no isolated regions)
+- Game menus: main, pause, help, level select
+- Level locks + unlock progression
+- Username login for global profile/progress
+- Global leaderboard (per level)
+- Creator details page
 - Installable PWA with offline caching
+- Cloudflare Worker backend + D1 database schema
 
-## File structure
+## Project structure
 
 ```text
 /project
@@ -35,45 +34,83 @@ TiltMaze is a mobile-first 2D tilt maze game built with HTML5 Canvas and vanilla
     /sounds
       wall.wav
       goal.wav
+  /backend
+    wrangler.toml
+    schema.sql
+    /src
+      index.js
 ```
 
-## Run locally
-
-1. Start a static server from project root:
+## Run frontend locally
 
 ```bash
 python3 -m http.server 8080
 ```
 
-2. Open `http://localhost:8080` in desktop browser.
-3. On phone (same Wi-Fi), open `http://<your-local-ip>:8080`.
+Open `http://localhost:8080`.
 
-## Install as PWA on phone
+## Cloudflare backend setup (production)
 
-1. Open the deployed app URL on your phone.
-2. Tap **Enable Motion Controls** and grant permission.
-3. Install:
-- Android Chrome: menu -> **Install app** / **Add to Home screen**
-- iOS Safari: share -> **Add to Home Screen**
-4. Launch from home screen for standalone app mode.
+1. Install Wrangler and login:
 
-## Deploy to GitHub Pages
+```bash
+npm i -g wrangler
+wrangler login
+```
 
-1. Push this project to GitHub (`main` branch).
-2. In repo settings: **Pages** -> **Build and deployment**.
-3. Choose **Deploy from a branch**.
-4. Select `main` and `/ (root)`.
-5. Save and wait for deployment.
-6. Open the Pages URL and install from phone.
+2. Create D1 database:
 
-## Notes
+```bash
+cd backend
+wrangler d1 create tiltmaze
+```
 
-- Service worker caches core game assets for offline play.
-- If you update files and do not see changes, hard-refresh once to pull new cache.
+3. Copy the returned `database_id` into `backend/wrangler.toml` (`database_id = "..."`).
 
-## Recent updates
+4. Apply schema:
 
-- Removed vibration feedback to prevent continuous vibration when touching walls.
-- Added expanded game menus (main menu, level select, pause menu, help screen).
-- Added more handcrafted levels and kept endless random maze progression.
-- Fixed disconnected maze regions by enforcing level connectivity before load.
+```bash
+wrangler d1 execute tiltmaze --file=schema.sql
+```
+
+5. Deploy Worker:
+
+```bash
+wrangler deploy
+```
+
+6. Copy Worker URL (example `https://tiltmaze-api.<subdomain>.workers.dev`).
+
+7. In game start screen, paste that URL in the `API URL` input, then login.
+
+## API endpoints
+
+- `POST /api/login` -> create/login by username
+- `GET /api/me` -> current user
+- `GET /api/progress` -> unlocked level state
+- `POST /api/progress/unlock` -> update unlock progress
+- `POST /api/leaderboard/submit` -> submit level time (best kept)
+- `GET /api/leaderboard?level=1&limit=20` -> global leaderboard
+- `GET /api/creator` -> creator metadata
+- `GET /api/health` -> health check
+
+## Deploy frontend to GitHub Pages
+
+1. Push this repo to GitHub.
+2. `Settings -> Pages -> Deploy from a branch`.
+3. Select `main` and `/ (root)`.
+4. Save and wait for publish.
+
+## PWA install (phone)
+
+1. Open deployed URL on phone.
+2. Enable motion controls.
+3. Install from browser menu:
+- Android Chrome: `Install app` / `Add to Home screen`
+- iOS Safari: Share -> `Add to Home Screen`
+
+## Commit/update note
+
+Each feature commit should also:
+- Update `README.md` with what was added/fixed/improved.
+- Bump `CACHE_NAME` in `service-worker.js`.

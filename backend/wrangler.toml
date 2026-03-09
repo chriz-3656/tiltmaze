@@ -1,0 +1,13 @@
+name = "tiltmaze-api"
+main = "src/index.js"
+compatibility_date = "2026-03-09"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "tiltmaze"
+database_id = "REPLACE_WITH_D1_DATABASE_ID"
+
+[vars]
+CREATOR_NAME = "chriz-3656"
+CREATOR_BIO = "Built TiltMaze, a mobile-first tilt-controlled maze PWA."
+CREATOR_WEBSITE = "https://github.com/chriz-3656"
