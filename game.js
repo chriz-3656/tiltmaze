@@ -48,7 +48,7 @@ const fallbackControls = document.getElementById("fallback-controls");
 const controlButtons = Array.from(document.querySelectorAll(".control-btn"));
 
 const onlineState = {
-  apiBase: localStorage.getItem("tiltmaze_api_base") || "",
+  apiBase: localStorage.getItem("tiltmaze_api_base") || "https://tiltmaze-api.chrizmonsaji.workers.dev",
   token: localStorage.getItem("tiltmaze_token") || "",
   username: localStorage.getItem("tiltmaze_username") || "",
   userId: Number(localStorage.getItem("tiltmaze_user_id") || 0),

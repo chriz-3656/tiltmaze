@@ -1,4 +1,4 @@
-const CACHE_NAME = "tiltmaze-v4";
+const CACHE_NAME = "tiltmaze-v5";
 const ASSETS = [
   "./",
   "index.html",

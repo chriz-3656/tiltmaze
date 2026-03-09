@@ -5,7 +5,7 @@ compatibility_date = "2026-03-09"
 [[d1_databases]]
 binding = "DB"
 database_name = "tiltmaze"
-database_id = "REPLACE_WITH_D1_DATABASE_ID"
+database_id = "43f2ce25-eccb-4d2e-a812-c6fb62c921c1"
 
 [vars]
 CREATOR_NAME = "chriz-3656"

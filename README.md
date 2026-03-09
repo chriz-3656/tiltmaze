@@ -79,9 +79,9 @@ wrangler d1 execute tiltmaze --file=schema.sql
 wrangler deploy
 ```
 
-6. Copy Worker URL (example `https://tiltmaze-api.<subdomain>.workers.dev`).
+6. Copy Worker URL (current deployed URL: `https://tiltmaze-api.chrizmonsaji.workers.dev`).
 
-7. In game start screen, paste that URL in the `API URL` input, then login.
+7. In game start screen, paste that URL in the `API URL` input (prefilled by default), then login.
 
 ## API endpoints
 
@@ -93,6 +93,12 @@ wrangler deploy
 - `GET /api/leaderboard?level=1&limit=20` -> global leaderboard
 - `GET /api/creator` -> creator metadata
 - `GET /api/health` -> health check
+
+## Credentials and tokens
+
+- Do not hardcode login tokens in source files.
+- Tokens are stored client-side in browser local storage after successful login.
+- `backend/wrangler.toml` should include real D1 `database_id` and never include private secrets.
 
 ## Deploy frontend to GitHub Pages
 

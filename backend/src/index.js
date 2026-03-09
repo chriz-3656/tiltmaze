@@ -222,7 +222,7 @@ export default {
           creator: {
             name: env.CREATOR_NAME || "TiltMaze Creator",
             bio: env.CREATOR_BIO || "Built TiltMaze with JavaScript and Cloudflare.",
-            website: env.CREATOR_WEBSITE || "https://example.com"
+            website: env.CREATOR_WEBSITE || "https://github.com/chriz-3656"
           }
         });
       }
