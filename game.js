@@ -101,6 +101,7 @@ const fixedLevels = [
 ];
 
 const generatedLevels = new Map();
+const sanitizedLevels = new Map();
 
 let levelIndex = 0;
 let maze = fixedLevels[levelIndex];
@@ -381,9 +382,19 @@ function findSpawnCell() {
 }
 
 function getLevel(index) {
-  if (index < fixedLevels.length) return fixedLevels[index];
-  if (!generatedLevels.has(index)) generatedLevels.set(index, generateRandomMaze(index));
-  return generatedLevels.get(index);
+  if (sanitizedLevels.has(index)) return sanitizedLevels.get(index);
+
+  let rawLevel;
+  if (index < fixedLevels.length) {
+    rawLevel = fixedLevels[index];
+  } else {
+    if (!generatedLevels.has(index)) generatedLevels.set(index, generateRandomMaze(index));
+    rawLevel = generatedLevels.get(index);
+  }
+
+  const connectedLevel = ensureLevelConnected(rawLevel);
+  sanitizedLevels.set(index, connectedLevel);
+  return connectedLevel;
 }
 
 function generateRandomMaze(index) {
@@ -416,6 +427,78 @@ function generateRandomMaze(index) {
 
   const goal = findFarthestPathCell(grid, 1, 1);
   grid[goal.row][goal.col] = 2;
+  return grid;
+}
+
+function ensureLevelConnected(level) {
+  const grid = level.map((row) => [...row]);
+  const openCells = [];
+  let start = null;
+
+  for (let row = 0; row < grid.length; row += 1) {
+    for (let col = 0; col < grid[row].length; col += 1) {
+      if (grid[row][col] !== 1) {
+        openCells.push([row, col]);
+        if (!start) start = [row, col];
+      }
+    }
+  }
+  if (!start) return grid;
+
+  const collectReachable = () => {
+    const queue = [start];
+    const seen = new Set([`${start[0]},${start[1]}`]);
+    const dirs = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+
+    while (queue.length) {
+      const [r, c] = queue.shift();
+      for (const [dr, dc] of dirs) {
+        const nr = r + dr;
+        const nc = c + dc;
+        const key = `${nr},${nc}`;
+        if (nr < 0 || nr >= grid.length || nc < 0 || nc >= grid[0].length) continue;
+        if (grid[nr][nc] === 1 || seen.has(key)) continue;
+        seen.add(key);
+        queue.push([nr, nc]);
+      }
+    }
+    return seen;
+  };
+
+  let reachable = collectReachable();
+  for (const [targetRow, targetCol] of openCells) {
+    const targetKey = `${targetRow},${targetCol}`;
+    if (reachable.has(targetKey)) continue;
+
+    // Carve a direct corridor to the nearest reachable cell.
+    let nearest = null;
+    let nearestDist = Infinity;
+    for (const key of reachable) {
+      const [r, c] = key.split(",").map(Number);
+      const dist = Math.abs(r - targetRow) + Math.abs(c - targetCol);
+      if (dist < nearestDist) {
+        nearest = [r, c];
+        nearestDist = dist;
+      }
+    }
+    if (!nearest) continue;
+
+    const [endRow, endCol] = nearest;
+    let r = targetRow;
+    let c = targetCol;
+    while (r !== endRow) {
+      if (grid[r][c] === 1) grid[r][c] = 0;
+      r += r < endRow ? 1 : -1;
+    }
+    while (c !== endCol) {
+      if (grid[r][c] === 1) grid[r][c] = 0;
+      c += c < endCol ? 1 : -1;
+    }
+    if (grid[endRow][endCol] === 1) grid[endRow][endCol] = 0;
+
+    reachable = collectReachable();
+  }
+
   return grid;
 }
 

@@ -70,3 +70,10 @@ python3 -m http.server 8080
 
 - Service worker caches core game assets for offline play.
 - If you update files and do not see changes, hard-refresh once to pull new cache.
+
+## Recent updates
+
+- Removed vibration feedback to prevent continuous vibration when touching walls.
+- Added expanded game menus (main menu, level select, pause menu, help screen).
+- Added more handcrafted levels and kept endless random maze progression.
+- Fixed disconnected maze regions by enforcing level connectivity before load.
