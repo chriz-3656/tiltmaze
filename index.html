@@ -16,6 +16,8 @@
         <h1>TiltMaze</h1>
         <p>Tilt your phone to move the ball through the maze.</p>
         <button id="start-btn" class="primary-btn">Start Game</button>
+        <button id="open-level-select-btn" class="secondary-btn">Level Select</button>
+        <button id="open-help-btn" class="secondary-btn">How To Play</button>
         <button id="enable-motion-btn" class="secondary-btn">Enable Motion Controls</button>
       </div>
     </section>
@@ -24,13 +26,46 @@
       <div class="panel">
         <h2 id="complete-title">Level Complete!</h2>
         <button id="next-level-btn" class="primary-btn">Next Level</button>
+        <button id="complete-menu-btn" class="secondary-btn">Main Menu</button>
+      </div>
+    </section>
+
+    <section id="pause-screen" class="overlay" aria-live="polite">
+      <div class="panel">
+        <h2>Paused</h2>
+        <button id="resume-btn" class="primary-btn">Resume</button>
+        <button id="pause-restart-btn" class="secondary-btn">Restart Level</button>
+        <button id="pause-menu-btn" class="secondary-btn">Main Menu</button>
+      </div>
+    </section>
+
+    <section id="level-select-screen" class="overlay" aria-live="polite">
+      <div class="panel">
+        <h2>Select Level</h2>
+        <p>First 6 are handcrafted. Higher levels are random mazes.</p>
+        <div id="level-grid" class="level-grid"></div>
+        <button id="close-level-select-btn" class="secondary-btn">Back</button>
+      </div>
+    </section>
+
+    <section id="help-screen" class="overlay" aria-live="polite">
+      <div class="panel">
+        <h2>How To Play</h2>
+        <p>Tilt phone left/right (gamma) and forward/back (beta) to roll the ball.</p>
+        <p>Avoid walls and reach the glowing green goal tile.</p>
+        <p>If motion sensors are unavailable, use on-screen arrow controls.</p>
+        <button id="close-help-btn" class="primary-btn">Got It</button>
       </div>
     </section>
 
     <header class="top-bar">
       <div>Level: <span id="level-label">1</span></div>
       <div>Time: <span id="timer-label">0.0s</span></div>
-      <button id="restart-btn" class="small-btn">Restart</button>
+      <div class="actions">
+        <button id="menu-btn" class="mini-btn">Menu</button>
+        <button id="pause-btn" class="mini-btn">Pause</button>
+        <button id="restart-btn" class="small-btn">Restart</button>
+      </div>
     </header>
 
     <section class="game-area">

@@ -3,17 +3,33 @@ const ctx = canvas.getContext("2d");
 
 const startScreen = document.getElementById("start-screen");
 const completeScreen = document.getElementById("complete-screen");
+const pauseScreen = document.getElementById("pause-screen");
+const levelSelectScreen = document.getElementById("level-select-screen");
+const helpScreen = document.getElementById("help-screen");
+
 const completeTitle = document.getElementById("complete-title");
 const startBtn = document.getElementById("start-btn");
+const openLevelSelectBtn = document.getElementById("open-level-select-btn");
+const closeLevelSelectBtn = document.getElementById("close-level-select-btn");
+const openHelpBtn = document.getElementById("open-help-btn");
+const closeHelpBtn = document.getElementById("close-help-btn");
 const nextLevelBtn = document.getElementById("next-level-btn");
+const completeMenuBtn = document.getElementById("complete-menu-btn");
 const restartBtn = document.getElementById("restart-btn");
+const pauseBtn = document.getElementById("pause-btn");
+const menuBtn = document.getElementById("menu-btn");
+const resumeBtn = document.getElementById("resume-btn");
+const pauseRestartBtn = document.getElementById("pause-restart-btn");
+const pauseMenuBtn = document.getElementById("pause-menu-btn");
 const enableMotionBtn = document.getElementById("enable-motion-btn");
+
 const levelLabel = document.getElementById("level-label");
 const timerLabel = document.getElementById("timer-label");
+const levelGrid = document.getElementById("level-grid");
 const fallbackControls = document.getElementById("fallback-controls");
 const controlButtons = Array.from(document.querySelectorAll(".control-btn"));
 
-const levels = [
+const fixedLevels = [
   [
     [1,1,1,1,1,1,1,1,1],
     [1,0,0,0,1,0,0,0,1],
@@ -46,11 +62,48 @@ const levels = [
     [1,0,1,1,1,1,1,1,1,0,1,0,1],
     [1,0,0,0,0,0,0,0,1,0,0,2,1],
     [1,1,1,1,1,1,1,1,1,1,1,1,1]
+  ],
+  [
+    [1,1,1,1,1,1,1,1,1,1,1],
+    [1,0,0,0,0,0,1,0,0,0,1],
+    [1,0,1,1,1,0,1,0,1,0,1],
+    [1,0,1,0,0,0,1,0,1,0,1],
+    [1,0,1,0,1,1,1,0,1,0,1],
+    [1,0,0,0,1,0,0,0,1,0,1],
+    [1,1,1,0,1,0,1,1,1,0,1],
+    [1,0,0,0,0,0,1,0,0,2,1],
+    [1,1,1,1,1,1,1,1,1,1,1]
+  ],
+  [
+    [1,1,1,1,1,1,1,1,1,1,1,1,1],
+    [1,0,0,1,0,0,0,0,0,1,0,0,1],
+    [1,0,1,1,0,1,1,1,0,1,0,1,1],
+    [1,0,0,0,0,1,0,0,0,1,0,0,1],
+    [1,1,1,1,0,1,0,1,1,1,1,0,1],
+    [1,0,0,1,0,0,0,1,0,0,0,0,1],
+    [1,0,1,1,1,1,0,1,0,1,1,1,1],
+    [1,0,0,0,0,0,0,1,0,0,0,2,1],
+    [1,1,1,1,1,1,1,1,1,1,1,1,1]
+  ],
+  [
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    [1,0,0,0,0,0,1,0,0,0,0,0,0,0,1],
+    [1,1,1,1,1,0,1,0,1,1,1,1,1,0,1],
+    [1,0,0,0,1,0,0,0,1,0,0,0,1,0,1],
+    [1,0,1,0,1,1,1,1,1,0,1,0,1,0,1],
+    [1,0,1,0,0,0,0,0,0,0,1,0,0,0,1],
+    [1,0,1,1,1,1,1,1,1,1,1,1,1,0,1],
+    [1,0,0,0,0,0,0,0,1,0,0,0,0,0,1],
+    [1,1,1,1,1,1,1,0,1,0,1,1,1,1,1],
+    [1,0,0,0,0,0,1,0,0,0,1,0,0,2,1],
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
   ]
 ];
 
+const generatedLevels = new Map();
+
 let levelIndex = 0;
-let maze = levels[levelIndex];
+let maze = fixedLevels[levelIndex];
 let tileSize = 40;
 let offsetX = 0;
 let offsetY = 0;
@@ -62,14 +115,17 @@ let velocityX = 0;
 let velocityY = 0;
 let accelerationX = 0;
 let accelerationY = 0;
-let friction = 0.94;
+const friction = 0.94;
 
 let joystickX = 0;
 let joystickY = 0;
 let hasSensorSupport = false;
 let motionEnabled = false;
+let gameStarted = false;
+let isPaused = false;
 
 let levelStart = performance.now();
+let pausedAt = performance.now();
 let lastTime = performance.now();
 let running = false;
 let audioCtx = null;
@@ -80,6 +136,7 @@ function initGame() {
   resizeCanvas();
   bindUI();
   initSensors();
+  buildLevelSelect();
   loadLevel(0);
   running = true;
   requestAnimationFrame(loop);
@@ -93,28 +150,72 @@ function initGame() {
 
 function bindUI() {
   startBtn.addEventListener("click", async () => {
-    if (!motionEnabled && hasSensorSupport) {
-      await requestMotionPermission();
-    }
-    startScreen.classList.remove("visible");
+    if (!motionEnabled && hasSensorSupport) await requestMotionPermission();
+    gameStarted = true;
+    hideAllOverlays();
   });
 
   enableMotionBtn.addEventListener("click", async () => {
     await requestMotionPermission();
   });
 
+  openLevelSelectBtn.addEventListener("click", () => {
+    showOverlay(levelSelectScreen);
+  });
+
+  closeLevelSelectBtn.addEventListener("click", () => {
+    showOverlay(startScreen);
+  });
+
+  openHelpBtn.addEventListener("click", () => {
+    showOverlay(helpScreen);
+  });
+
+  closeHelpBtn.addEventListener("click", () => {
+    showOverlay(startScreen);
+  });
+
   nextLevelBtn.addEventListener("click", () => {
-    completeScreen.classList.remove("visible");
-    if (levelIndex >= levels.length) {
-      loadLevel(0);
-    } else {
-      loadLevel(levelIndex);
-    }
+    hideAllOverlays();
+    loadLevel(levelIndex);
+    isPaused = false;
+  });
+
+  completeMenuBtn.addEventListener("click", () => {
+    goToMenu();
   });
 
   restartBtn.addEventListener("click", () => {
     loadLevel(levelIndex);
-    completeScreen.classList.remove("visible");
+    hideOverlay(completeScreen);
+  });
+
+  pauseBtn.addEventListener("click", () => {
+    if (!gameStarted || completeScreen.classList.contains("visible")) return;
+    isPaused = true;
+    pausedAt = performance.now();
+    showOverlay(pauseScreen);
+  });
+
+  menuBtn.addEventListener("click", () => {
+    goToMenu();
+  });
+
+  resumeBtn.addEventListener("click", () => {
+    if (!isPaused) return;
+    levelStart += performance.now() - pausedAt;
+    isPaused = false;
+    hideOverlay(pauseScreen);
+  });
+
+  pauseRestartBtn.addEventListener("click", () => {
+    loadLevel(levelIndex);
+    isPaused = false;
+    hideOverlay(pauseScreen);
+  });
+
+  pauseMenuBtn.addEventListener("click", () => {
+    goToMenu();
   });
 
   controlButtons.forEach((btn) => {
@@ -134,6 +235,45 @@ function bindUI() {
     resizeCanvas();
     loadLevel(levelIndex);
   });
+}
+
+function goToMenu() {
+  isPaused = false;
+  gameStarted = false;
+  hideAllOverlays();
+  showOverlay(startScreen);
+}
+
+function showOverlay(overlay) {
+  hideAllOverlays();
+  overlay.classList.add("visible");
+}
+
+function hideOverlay(overlay) {
+  overlay.classList.remove("visible");
+}
+
+function hideAllOverlays() {
+  [startScreen, completeScreen, pauseScreen, levelSelectScreen, helpScreen].forEach((overlay) => {
+    overlay.classList.remove("visible");
+  });
+}
+
+function buildLevelSelect() {
+  levelGrid.innerHTML = "";
+  for (let i = 0; i < 15; i += 1) {
+    const btn = document.createElement("button");
+    btn.className = "level-btn";
+    btn.textContent = i < fixedLevels.length ? `L${i + 1}` : `R${i + 1}`;
+    btn.addEventListener("click", () => {
+      levelIndex = i;
+      loadLevel(levelIndex);
+      gameStarted = true;
+      isPaused = false;
+      hideAllOverlays();
+    });
+    levelGrid.appendChild(btn);
+  }
 }
 
 function initSensors() {
@@ -201,9 +341,9 @@ function resizeCanvas() {
 }
 
 function loadLevel(index) {
-  const safeIndex = index >= 0 && index < levels.length ? index : 0;
+  const safeIndex = Number.isFinite(index) && index >= 0 ? Math.floor(index) : 0;
   levelIndex = safeIndex;
-  maze = levels[levelIndex];
+  maze = getLevel(levelIndex);
 
   const cols = maze[0].length;
   const rows = maze.length;
@@ -226,6 +366,7 @@ function loadLevel(index) {
   joystickY = 0;
 
   levelStart = performance.now();
+  pausedAt = levelStart;
   levelLabel.textContent = String(levelIndex + 1);
   timerLabel.textContent = "0.0s";
 }
@@ -233,12 +374,84 @@ function loadLevel(index) {
 function findSpawnCell() {
   for (let row = 0; row < maze.length; row += 1) {
     for (let col = 0; col < maze[row].length; col += 1) {
-      if (maze[row][col] === 0) {
-        return { row, col };
-      }
+      if (maze[row][col] === 0) return { row, col };
     }
   }
   return { row: 1, col: 1 };
+}
+
+function getLevel(index) {
+  if (index < fixedLevels.length) return fixedLevels[index];
+  if (!generatedLevels.has(index)) generatedLevels.set(index, generateRandomMaze(index));
+  return generatedLevels.get(index);
+}
+
+function generateRandomMaze(index) {
+  const extra = index - fixedLevels.length + 1;
+  const size = Math.min(31, 13 + Math.floor(extra / 2) * 2);
+  const rows = size % 2 === 0 ? size + 1 : size;
+  const cols = rows;
+  const grid = Array.from({ length: rows }, () => Array(cols).fill(1));
+  const stack = [[1, 1]];
+  const directions = [[0, 2], [0, -2], [2, 0], [-2, 0]];
+
+  grid[1][1] = 0;
+
+  while (stack.length) {
+    const [r, c] = stack[stack.length - 1];
+    const candidates = shuffle(directions)
+      .map(([dr, dc]) => [r + dr, c + dc, dr, dc])
+      .filter(([nr, nc]) => nr > 0 && nr < rows - 1 && nc > 0 && nc < cols - 1 && grid[nr][nc] === 1);
+
+    if (!candidates.length) {
+      stack.pop();
+      continue;
+    }
+
+    const [nr, nc, dr, dc] = candidates[0];
+    grid[r + dr / 2][c + dc / 2] = 0;
+    grid[nr][nc] = 0;
+    stack.push([nr, nc]);
+  }
+
+  const goal = findFarthestPathCell(grid, 1, 1);
+  grid[goal.row][goal.col] = 2;
+  return grid;
+}
+
+function findFarthestPathCell(grid, startRow, startCol) {
+  const rows = grid.length;
+  const cols = grid[0].length;
+  const queue = [[startRow, startCol, 0]];
+  const seen = new Set([`${startRow},${startCol}`]);
+  const neighbors = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+  let farthest = { row: startRow, col: startCol, dist: 0 };
+
+  while (queue.length) {
+    const [row, col, dist] = queue.shift();
+    if (dist > farthest.dist) farthest = { row, col, dist };
+
+    for (const [dr, dc] of neighbors) {
+      const nr = row + dr;
+      const nc = col + dc;
+      const key = `${nr},${nc}`;
+      if (nr < 0 || nr >= rows || nc < 0 || nc >= cols) continue;
+      if (grid[nr][nc] === 1 || seen.has(key)) continue;
+      seen.add(key);
+      queue.push([nr, nc, dist + 1]);
+    }
+  }
+
+  return farthest;
+}
+
+function shuffle(items) {
+  const arr = [...items];
+  for (let i = arr.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
 }
 
 function setJoystick(dir, active) {
@@ -256,14 +469,12 @@ function updatePhysics(dt) {
 
   velocityX += accelerationX * dt;
   velocityY += accelerationY * dt;
-
   velocityX *= friction;
   velocityY *= friction;
 
   let nextX = ballX + velocityX * dt;
   let nextY = ballY + velocityY * dt;
 
-  // Resolve X and Y separately to keep collisions stable.
   const hitX = checkCollisions(nextX, ballY);
   if (hitX) {
     velocityX *= -0.2;
@@ -276,10 +487,7 @@ function updatePhysics(dt) {
     nextY = ballY;
   }
 
-  if (hitX || hitY) {
-    if (navigator.vibrate) navigator.vibrate(50);
-    playSound(wallAudio, 160, 0.03, "square");
-  }
+  if (hitX || hitY) playSound(wallAudio, 160, 0.03, "square");
 
   ballX = nextX;
   ballY = nextY;
@@ -289,15 +497,11 @@ function checkCollisions(testX, testY) {
   for (let row = 0; row < maze.length; row += 1) {
     for (let col = 0; col < maze[row].length; col += 1) {
       if (maze[row][col] !== 1) continue;
-
       const rx = offsetX + col * tileSize;
       const ry = offsetY + row * tileSize;
-      if (circleRectIntersect(testX, testY, ballRadius, rx, ry, tileSize, tileSize)) {
-        return true;
-      }
+      if (circleRectIntersect(testX, testY, ballRadius, rx, ry, tileSize, tileSize)) return true;
     }
   }
-
   return false;
 }
 
@@ -325,18 +529,13 @@ function checkGoal() {
 
 function onLevelComplete() {
   playSound(goalAudio, 680, 0.12, "triangle");
-  completeScreen.classList.add("visible");
-
   const nextIndex = levelIndex + 1;
-  if (nextIndex >= levels.length) {
-    completeTitle.textContent = "You cleared all levels!";
-    nextLevelBtn.textContent = "Play Again";
-    levelIndex = levels.length;
-  } else {
-    completeTitle.textContent = "Level Complete!";
-    nextLevelBtn.textContent = "Next Level";
-    levelIndex = nextIndex;
-  }
+  completeTitle.textContent = nextIndex === fixedLevels.length
+    ? "Level Complete! Random mazes unlocked."
+    : "Level Complete!";
+  nextLevelBtn.textContent = "Next Level";
+  levelIndex = nextIndex;
+  showOverlay(completeScreen);
 }
 
 function drawMaze() {
@@ -348,13 +547,8 @@ function drawMaze() {
       const y = offsetY + row * tileSize;
       const tile = maze[row][col];
 
-      if (tile === 1) {
-        ctx.fillStyle = "#353535";
-        ctx.fillRect(x, y, tileSize, tileSize);
-      } else {
-        ctx.fillStyle = "#d4d4d4";
-        ctx.fillRect(x, y, tileSize, tileSize);
-      }
+      ctx.fillStyle = tile === 1 ? "#353535" : "#d4d4d4";
+      ctx.fillRect(x, y, tileSize, tileSize);
 
       if (tile === 2) {
         const glow = ctx.createRadialGradient(
@@ -421,6 +615,10 @@ function playSound(audio, fallbackFreq, fallbackSeconds, fallbackType) {
   audio.play().catch(() => playTone(fallbackFreq, fallbackSeconds, fallbackType));
 }
 
+function canRunGameplay() {
+  return gameStarted && !isPaused && !completeScreen.classList.contains("visible");
+}
+
 function loop(ts) {
   if (!running) return;
 
@@ -428,7 +626,7 @@ function loop(ts) {
   lastTime = ts;
   const dt = delta / 16.67;
 
-  if (!completeScreen.classList.contains("visible") && !startScreen.classList.contains("visible")) {
+  if (canRunGameplay()) {
     updatePhysics(dt);
     checkGoal();
     const elapsed = (performance.now() - levelStart) / 1000;
@@ -437,7 +635,6 @@ function loop(ts) {
 
   drawMaze();
   drawBall();
-
   requestAnimationFrame(loop);
 }
 

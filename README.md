@@ -1,6 +1,22 @@
 # TiltMaze (PWA)
 
-TiltMaze is a mobile-first 2D tilt-controlled maze game built with HTML5 Canvas and vanilla JavaScript.
+TiltMaze is a mobile-first 2D tilt maze game built with HTML5 Canvas and vanilla JavaScript.
+
+## Features
+
+- Motion controls with `DeviceOrientationEvent` (`gamma` and `beta`)
+- On-screen directional fallback controls when sensors are unavailable
+- Real-time ball physics (acceleration, velocity, friction)
+- Wall collision handling with bounce effect and collision sound
+- Goal detection and level progression
+- 6 handcrafted levels
+- Endless procedurally generated levels after handcrafted levels
+- Full game menu system:
+  - Main menu
+  - Level select menu
+  - Pause menu (resume/restart/menu)
+  - How-to-play screen
+- Installable PWA with offline caching
 
 ## File structure
 
@@ -23,35 +39,34 @@ TiltMaze is a mobile-first 2D tilt-controlled maze game built with HTML5 Canvas 
 
 ## Run locally
 
-1. Start a local static server from the project root:
+1. Start a static server from project root:
 
 ```bash
 python3 -m http.server 8080
 ```
 
-2. Open `http://localhost:8080` in a browser.
-3. On phone, use the same network and open your machine IP (example: `http://192.168.1.10:8080`).
+2. Open `http://localhost:8080` in desktop browser.
+3. On phone (same Wi-Fi), open `http://<your-local-ip>:8080`.
 
-## Install PWA on phone
+## Install as PWA on phone
 
-1. Open TiltMaze in a mobile browser that supports PWA install.
-2. Tap **Enable Motion Controls** and allow sensor permission.
-3. Install app:
-- Android (Chrome): menu -> **Install app** / **Add to Home screen**.
-- iOS (Safari): share -> **Add to Home Screen**.
-4. Launch from home screen for standalone mode.
+1. Open the deployed app URL on your phone.
+2. Tap **Enable Motion Controls** and grant permission.
+3. Install:
+- Android Chrome: menu -> **Install app** / **Add to Home screen**
+- iOS Safari: share -> **Add to Home Screen**
+4. Launch from home screen for standalone app mode.
 
 ## Deploy to GitHub Pages
 
-1. Create a GitHub repo and push this project.
-2. In repository settings: **Pages** -> **Build and deployment**.
-3. Set source to **Deploy from a branch**.
-4. Select `main` branch and `/ (root)` folder.
+1. Push this project to GitHub (`main` branch).
+2. In repo settings: **Pages** -> **Build and deployment**.
+3. Choose **Deploy from a branch**.
+4. Select `main` and `/ (root)`.
 5. Save and wait for deployment.
-6. Open the published Pages URL and install the PWA from your phone.
+6. Open the Pages URL and install from phone.
 
 ## Notes
 
-- Uses `DeviceOrientationEvent` (`gamma` and `beta`) for tilt movement.
-- Includes on-screen directional controls fallback when sensors are unavailable/denied.
-- Supports offline gameplay through service worker caching.
+- Service worker caches core game assets for offline play.
+- If you update files and do not see changes, hard-refresh once to pull new cache.
