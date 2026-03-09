@@ -16,6 +16,7 @@ TiltMaze is a mobile-first 2D tilt maze game built with HTML5 Canvas and vanilla
 - Creator details page
 - Installable PWA with offline caching
 - Cloudflare Worker backend + D1 database schema
+- Enhanced game-style visual UI (arcade-themed HUD, overlays, controls, and panels)
 
 ## Project structure
 

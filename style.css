@@ -1,10 +1,14 @@
 :root {
-  --bg: #111111;
-  --panel: #1e1e1e;
-  --text: #f2f2f2;
-  --muted: #bdbdbd;
-  --accent: #23c483;
-  --danger: #ff5f5f;
+  --bg-1: #06111e;
+  --bg-2: #0d1f34;
+  --panel: rgba(8, 17, 31, 0.9);
+  --panel-border: rgba(128, 203, 255, 0.25);
+  --text: #e9f6ff;
+  --muted: #9fc0d8;
+  --accent: #2ce2b1;
+  --accent-2: #20b4ff;
+  --danger: #ff6f5d;
+  --btn-dark: #10243b;
 }
 
 * {
@@ -20,8 +24,11 @@ body {
   width: 100%;
   height: 100%;
   font-family: "Trebuchet MS", "Segoe UI", sans-serif;
-  background: radial-gradient(circle at top, #202020 0%, var(--bg) 70%);
   color: var(--text);
+  background:
+    radial-gradient(900px 500px at 15% -10%, rgba(43, 170, 255, 0.28), transparent 60%),
+    radial-gradient(700px 520px at 95% 8%, rgba(44, 226, 177, 0.2), transparent 62%),
+    linear-gradient(165deg, var(--bg-2), var(--bg-1));
 }
 
 .app {
@@ -37,11 +44,12 @@ body {
   grid-template-columns: 1fr 1fr 1fr auto;
   gap: 8px;
   align-items: center;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 10px;
+  background: linear-gradient(180deg, rgba(14, 35, 56, 0.9), rgba(7, 18, 32, 0.88));
+  border: 1px solid var(--panel-border);
+  border-radius: 12px;
   padding: 10px;
-  font-size: 0.92rem;
+  font-size: 0.88rem;
+  box-shadow: inset 0 0 0 1px rgba(20, 64, 102, 0.45), 0 8px 20px rgba(0, 0, 0, 0.35);
 }
 
 .actions {
@@ -52,11 +60,14 @@ body {
 .game-area {
   position: relative;
   flex: 1;
-  min-height: 300px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 14px;
+  min-height: 320px;
+  background:
+    linear-gradient(160deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.01)),
+    radial-gradient(700px 240px at 50% 0%, rgba(32, 180, 255, 0.16), transparent 70%);
+  border: 1px solid rgba(103, 189, 255, 0.34);
+  border-radius: 16px;
   overflow: hidden;
+  box-shadow: 0 12px 26px rgba(2, 8, 19, 0.55);
 }
 
 #game-canvas {
@@ -66,34 +77,43 @@ body {
 }
 
 button {
-  border: none;
+  border: 1px solid transparent;
   color: var(--text);
-  border-radius: 10px;
+  border-radius: 11px;
   padding: 10px 14px;
-  font-size: 0.95rem;
+  font-size: 0.94rem;
+  font-weight: 700;
   cursor: pointer;
+  transition: transform 120ms ease, filter 120ms ease, box-shadow 120ms ease;
+}
+
+button:active {
+  transform: scale(0.98);
 }
 
 .small-btn {
-  background: var(--danger);
+  background: linear-gradient(180deg, #ff887b, var(--danger));
+  color: #330905;
+  border-color: rgba(255, 255, 255, 0.28);
 }
 
 .mini-btn {
-  background: #2f2f2f;
-  border: 1px solid #444;
+  background: linear-gradient(180deg, #1c3f63, #12304e);
+  border-color: rgba(135, 210, 255, 0.35);
   padding: 8px 10px;
   font-size: 0.8rem;
 }
 
 .primary-btn {
-  background: var(--accent);
-  color: #042415;
-  font-weight: 700;
+  background: linear-gradient(120deg, var(--accent), var(--accent-2));
+  color: #04251e;
+  border-color: rgba(255, 255, 255, 0.52);
+  box-shadow: 0 8px 18px rgba(27, 151, 195, 0.28);
 }
 
 .secondary-btn {
-  background: #2f2f2f;
-  border: 1px solid #444;
+  background: linear-gradient(180deg, #163754, var(--btn-dark));
+  border-color: rgba(120, 199, 255, 0.34);
 }
 
 .overlay {
@@ -101,9 +121,12 @@ button {
   inset: 0;
   display: none;
   place-items: center;
-  background: rgba(0, 0, 0, 0.78);
-  z-index: 10;
   padding: 20px;
+  z-index: 10;
+  background:
+    radial-gradient(circle at 50% -20%, rgba(44, 226, 177, 0.14), transparent 45%),
+    rgba(2, 9, 16, 0.88);
+  backdrop-filter: blur(4px);
 }
 
 .overlay.visible {
@@ -111,14 +134,29 @@ button {
 }
 
 .panel {
-  width: min(480px, 100%);
+  width: min(500px, 100%);
   max-height: 92dvh;
   overflow: auto;
-  background: var(--panel);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(14, 34, 54, 0.95), rgba(8, 19, 34, 0.95));
+  border: 1px solid var(--panel-border);
+  border-radius: 16px;
   padding: 20px;
   text-align: center;
+  box-shadow: 0 18px 34px rgba(0, 0, 0, 0.42);
+}
+
+.panel h1,
+.panel h2 {
+  margin-top: 4px;
+  letter-spacing: 0.02em;
+}
+
+.panel h1 {
+  font-size: 2rem;
+  background: linear-gradient(120deg, #8ce2ff, #47ffc8);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
 .panel p {
@@ -133,12 +171,16 @@ button {
 
 .text-input {
   width: 100%;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  background: #111;
-  color: #f2f2f2;
-  border-radius: 8px;
+  border: 1px solid rgba(133, 204, 255, 0.3);
+  background: rgba(2, 10, 22, 0.86);
+  color: var(--text);
+  border-radius: 9px;
   padding: 10px;
   margin-top: 8px;
+}
+
+.text-input::placeholder {
+  color: #7aa3c0;
 }
 
 .compact {
@@ -147,7 +189,7 @@ button {
 
 .status-text {
   font-size: 0.9rem;
-  color: #c9c9c9;
+  color: #bde4ff;
   min-height: 20px;
 }
 
@@ -159,14 +201,14 @@ button {
 }
 
 .level-btn {
-  background: #242424;
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: linear-gradient(180deg, rgba(33, 72, 107, 0.96), rgba(16, 43, 70, 0.96));
+  border: 1px solid rgba(130, 208, 255, 0.3);
   padding: 10px;
-  border-radius: 8px;
+  border-radius: 9px;
 }
 
 .level-btn.locked {
-  opacity: 0.4;
+  opacity: 0.45;
 }
 
 .leaderboard-controls {
@@ -180,8 +222,9 @@ button {
 .leaderboard-table-wrap {
   max-height: 280px;
   overflow: auto;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(130, 208, 255, 0.25);
   border-radius: 10px;
+  background: rgba(6, 16, 28, 0.7);
 }
 
 .leaderboard-table {
@@ -192,8 +235,12 @@ button {
 .leaderboard-table th,
 .leaderboard-table td {
   padding: 8px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(143, 213, 255, 0.15);
   text-align: left;
+}
+
+.leaderboard-table thead {
+  background: rgba(23, 54, 83, 0.8);
 }
 
 .controls {
@@ -216,8 +263,8 @@ button {
 .control-btn {
   width: 56px;
   height: 56px;
-  background: rgba(30, 30, 30, 0.92);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: linear-gradient(180deg, rgba(27, 59, 90, 0.94), rgba(15, 39, 61, 0.94));
+  border: 1px solid rgba(146, 216, 255, 0.25);
   font-size: 1.35rem;
 }
 
@@ -225,9 +272,35 @@ button {
   display: none;
 }
 
+@media (max-width: 640px) {
+  .top-bar {
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      "level time"
+      "user actions";
+  }
+
+  .top-bar > div:nth-child(1) {
+    grid-area: level;
+  }
+
+  .top-bar > div:nth-child(2) {
+    grid-area: time;
+  }
+
+  .top-bar > div:nth-child(3) {
+    grid-area: user;
+  }
+
+  .actions {
+    grid-area: actions;
+    justify-self: end;
+  }
+}
+
 @media (min-width: 768px) {
   .app {
-    max-width: 620px;
+    max-width: 640px;
     margin: 0 auto;
   }
 }
